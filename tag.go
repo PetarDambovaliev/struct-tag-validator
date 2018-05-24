@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -9,28 +10,27 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"fmt"
 )
 
 // Tag represents a model struct tag.
 type Tag struct {
-	name string
-	value string
+	name       string
+	value      string
 	structName string
 }
 
 // GetName returns the name of the tag.
-func (t *Tag) GetName() string  {
+func (t *Tag) GetName() string {
 	return t.name
 }
 
 // GetValue returns the value of the tag.
-func (t *Tag) GetValue() string  {
+func (t *Tag) GetValue() string {
 	return t.value
 }
 
 // GetStructName returns the struct name the tag belongs to.
-func (t *Tag) GetStructName() string  {
+func (t *Tag) GetStructName() string {
 	return t.structName
 }
 
@@ -40,7 +40,6 @@ func getPackages(folder string, models ...string) map[string]*ast.Package {
 	path = os.Getenv("GOPATH")
 	path = filepath.Join(path, "src")
 	path = filepath.Join(path, folder)
-
 
 	fset := token.NewFileSet()
 	modelMap := make(map[string]bool, len(models))
@@ -95,8 +94,8 @@ func getTags(tagNames []string, packages map[string]*ast.Package) map[string][]*
 			")",
 			`[ ]*:[ ]*"([^"]*)"`},
 			"",
-			),
-		)
+		),
+	)
 
 	tagChans := []<-chan *Tag{}
 	tags := map[string][]*Tag{}
@@ -110,14 +109,15 @@ func getTags(tagNames []string, packages map[string]*ast.Package) map[string][]*
 
 	t := multiplex(tagChans...)
 
-	 Loop: for {
+Loop:
+	for {
 		select {
-			case tag, ok := <-t:
-				if !ok {
-					break Loop
-				}
+		case tag, ok := <-t:
+			if !ok {
+				break Loop
+			}
 
-				tags[tag.structName] = append(tags[tag.structName], tag)
+			tags[tag.structName] = append(tags[tag.structName], tag)
 		}
 	}
 
@@ -126,19 +126,19 @@ func getTags(tagNames []string, packages map[string]*ast.Package) map[string][]*
 
 func multiplex(cs ...<-chan *Tag) <-chan *Tag {
 	var wg sync.WaitGroup
-	out :=  make(chan *Tag, 50 * len(cs))
+	out := make(chan *Tag, 50*len(cs))
 
-	output := func(c <- chan *Tag) {
+	output := func(c <-chan *Tag) {
 		defer wg.Done()
 
-		 for {
+		for {
 			select {
-				case tag := <- c:
-					if tag == nil {
-						return
-					}
+			case tag := <-c:
+				if tag == nil {
+					return
+				}
 
-					out <- tag
+				out <- tag
 			}
 		}
 	}
@@ -162,40 +162,40 @@ func collecFields(file *ast.File, dbRegex *regexp.Regexp) <-chan *Tag {
 	tagChan := make(chan *Tag, 50)
 	var structName string
 
-		go func() {
-			ast.Inspect(file, func(node ast.Node) bool {
-				switch x := node.(type) {
-				case *ast.TypeSpec:
-					//Get the struct name and end pos
-					structName = x.Name.Name
-				case *ast.StructType:
-					//Extract all db tags from the struct fields
-					for _, field := range x.Fields.List {
-						if field.Tag != nil {
-							matches := dbRegex.FindAllStringSubmatch(field.Tag.Value, -1);
-							if len(matches) > 0 {
-								for _, matchTags := range matches {
-									tagChan <- &Tag{
-										matchTags[1],
-										matchTags[2],
-										structName,
-									}
+	go func() {
+		ast.Inspect(file, func(node ast.Node) bool {
+			switch x := node.(type) {
+			case *ast.TypeSpec:
+				//Get the struct name and end pos
+				structName = x.Name.Name
+			case *ast.StructType:
+				//Extract all db tags from the struct fields
+				for _, field := range x.Fields.List {
+					if field.Tag != nil {
+						matches := dbRegex.FindAllStringSubmatch(field.Tag.Value, -1)
+						if len(matches) > 0 {
+							for _, matchTags := range matches {
+								tagChan <- &Tag{
+									matchTags[1],
+									matchTags[2],
+									structName,
 								}
 							}
 						}
 					}
-
-				case *ast.FuncDecl:
-					return false
-				case *ast.ValueSpec:
-					return false
 				}
 
-				return true
-			})
+			case *ast.FuncDecl:
+				return false
+			case *ast.ValueSpec:
+				return false
+			}
 
-			tagChan <- nil
-		}()
+			return true
+		})
+
+		tagChan <- nil
+	}()
 
 	return tagChan
 }

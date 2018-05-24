@@ -1,17 +1,17 @@
 package validator
 
 import (
-	"testing"
-	"os"
-	"path/filepath"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/require"
-	"strings"
+	"os"
+	"path/filepath"
 	"strconv"
-	"errors"
+	"strings"
+	"testing"
 )
 
-const cnt  = 0xC350 //50k
+const cnt = 0xC350 //50k
 
 var modelsPath = "github.com/petar-dambovaliev/struct-tag-validator/models"
 
@@ -25,7 +25,7 @@ import (
 var structTmp = `
 
 type %v struct {
-	ID        uuid.UUID`+
+	ID        uuid.UUID` +
 	"`" +
 	`json:"id" db:"id"` +
 	"`\n" +
@@ -41,12 +41,11 @@ type %v struct {
 	"func testFunc(){}"
 
 type structTpl struct {
-	structName string
-	createdAt string
-	updatedAt string
+	structName     string
+	createdAt      string
+	updatedAt      string
 	duplicateField string
 }
-
 
 func createModel(fileName string, structs []structTpl) {
 	os.Mkdir("./models", 0755)
@@ -220,11 +219,10 @@ func Test_testValidateAllowDuplicates(t *testing.T) {
 	r.Len(errs, 0)
 }
 
-func Test_testValidator_ErrorsCount(t *testing.T)  {
+func Test_testValidator_ErrorsCount(t *testing.T) {
 	r := require.New(t)
 
-
-	for i := 0; i < 44 ; i++ {
+	for i := 0; i < 44; i++ {
 		structs := []structTpl{{
 			"Customer" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
@@ -233,14 +231,14 @@ func Test_testValidator_ErrorsCount(t *testing.T)  {
 		},
 		}
 
-		createModel("Customer" + strconv.Itoa(i) + ".go", structs)
+		createModel("Customer"+strconv.Itoa(i)+".go", structs)
 	}
 
 	m := NewValidator(modelsPath)
 	m.AddDefaultProcessors("db")
 	errs := m.Run()
 
-	r.Len(errs,44)
+	r.Len(errs, 44)
 
 	os.RemoveAll("./models")
 }
@@ -258,10 +256,10 @@ func BenchmarkModel_ValidateNoErrors(b *testing.B) {
 			"created_at" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
-			},
+		},
 		}
 
-		createModel("Customer" + strconv.Itoa(i) + ".go", structs)
+		createModel("Customer"+strconv.Itoa(i)+".go", structs)
 	}
 
 	b.StartTimer()
@@ -288,20 +286,18 @@ func BenchmarkModel_ValidateWithErrors(b *testing.B) {
 	//so we stop the timer
 	b.StopTimer()
 
-
 	//Let's stress the program and create 50k models
-	for i := 0; i < cnt ; i++ {
+	for i := 0; i < cnt; i++ {
 		structs := []structTpl{{
 			"Customer" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
 			"updated_at" + strconv.Itoa(i),
-			},
+		},
 		}
 
-		createModel("Customer" + strconv.Itoa(i) + ".go", structs)
+		createModel("Customer"+strconv.Itoa(i)+".go", structs)
 	}
-
 
 	b.StartTimer()
 

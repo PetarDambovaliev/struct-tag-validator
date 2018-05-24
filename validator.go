@@ -1,11 +1,11 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
-	"strings"
 	"regexp"
-	"errors"
+	"strings"
 )
 
 // AllTags can be used to validate all tags
@@ -15,15 +15,15 @@ var defaultRegexRules = map[string]*regexp.Regexp{
 	//allowed symbols in a tag
 	"Invalid symboles %v in %v.%v.%v": regexp.MustCompile(`[^a-z0-9_, ]+`),
 	//allowed symbols of the end of a tag
-	"Tag cannot end on %v in  %v.%v.%v" : regexp.MustCompile(`[^a-z0-9]$`),
+	"Tag cannot end on %v in  %v.%v.%v": regexp.MustCompile(`[^a-z0-9]$`),
 }
 
 // Validator holds information about the parsed models
 type Validator struct {
-	packages map[string]*ast.Package
-	tags     map[string][]*Tag
-	processors map[string][]func(tag *Tag) []error
-	path string
+	packages        map[string]*ast.Package
+	tags            map[string][]*Tag
+	processors      map[string][]func(tag *Tag) []error
+	path            string
 	allowDuplicates bool
 }
 
@@ -77,7 +77,7 @@ func checkForDuplicates(t *Tag, fieldsCache map[string]bool) []error {
 	return errs
 }
 
-func (v *Validator) setPath(path string)  {
+func (v *Validator) setPath(path string) {
 	v.path = path
 }
 
@@ -100,12 +100,12 @@ func NewValidator(path string) Validator {
 
 // Run  will validate specified tags on all models, if none were passed.
 // It returns validation errors, if any produced by the processor.
-func (v *Validator) Run(models ...string)  []error {
+func (v *Validator) Run(models ...string) []error {
 	v.packages = getPackages(v.path, models...)
 
 	if len(v.processors) == 0 {
 		return []error{
-			errors.New( "there are no processors to run, consider adding the default ones"),
+			errors.New("there are no processors to run, consider adding the default ones"),
 		}
 	}
 
@@ -117,7 +117,7 @@ func (v *Validator) Run(models ...string)  []error {
 
 	v.tags = getTags(tags, v.packages)
 
-	return  v.validate()
+	return v.validate()
 }
 
 func (v *Validator) validate() []error {
@@ -130,7 +130,7 @@ func (v *Validator) validate() []error {
 
 	for _, fields := range v.tags {
 		for _, t := range fields {
-			executableProcessors := []func(tag *Tag) []error {}
+			executableProcessors := []func(tag *Tag) []error{}
 
 			if !v.allowDuplicates {
 				errs = append(errs, checkForDuplicates(t, fieldsCache)...)
@@ -156,7 +156,6 @@ func (v *Validator) validate() []error {
 
 	return errs
 }
-
 
 // AddProcessor adds a processor that will validate the given model tags
 // The tags given for the processors will be the tags parsed by the validator where `*` is a reference to all tags
