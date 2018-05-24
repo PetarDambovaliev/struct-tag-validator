@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"errors"
 	"fmt"
 )
 
@@ -72,7 +71,7 @@ func getPackages(folder string, models ...string) map[string]*ast.Package {
 	}
 
 	if len(pkgs) == 0 {
-		panic(errors.New(fmt.Sprintf("No structs found at %v", path)))
+		panic(fmt.Errorf("No structs found at %v", path))
 	}
 
 	return pkgs
@@ -185,6 +184,11 @@ func collecFields(file *ast.File, dbRegex *regexp.Regexp) <-chan *Tag {
 							}
 						}
 					}
+
+				case *ast.FuncDecl:
+					return false
+				case *ast.ValueSpec:
+					return false
 				}
 
 				return true

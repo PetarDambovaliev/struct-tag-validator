@@ -13,7 +13,7 @@ import (
 
 const cnt  = 0xC350 //50k
 
-var modelsPath string = "github.com/petardambovaliev/struct-tag-validator/models"
+var modelsPath = "github.com/petar-dambovaliev/struct-tag-validator/models"
 
 var declrTmp = `package models
 
@@ -22,7 +22,7 @@ import (
 	"time"
 )`
 
-var structTmp string = `
+var structTmp = `
 
 type %v struct {
 	ID        uuid.UUID`+
@@ -37,7 +37,8 @@ type %v struct {
 	`json:"updated_at" db:"%v"` +
 	"`\n}" +
 	"\n   " +
-	"\n"
+	"\n" +
+	"func testFunc(){}"
 
 type structTpl struct {
 	structName string
@@ -50,7 +51,7 @@ type structTpl struct {
 func createModel(fileName string, structs []structTpl) {
 	os.Mkdir("./models", 0755)
 
-	var tmp string = declrTmp
+	var tmp = declrTmp
 
 	for _, structTp := range structs {
 		tmp = strings.Join([]string{
@@ -175,7 +176,7 @@ func Test_testValidateDuplicates(t *testing.T) {
 
 	for _, pkg := range m.packages {
 		r.Equal(1, len(pkg.Files))
-		for fileName, _ := range pkg.Files {
+		for fileName := range pkg.Files {
 			r.Equal(true, strings.HasSuffix(fileName, "customer.go"))
 		}
 	}

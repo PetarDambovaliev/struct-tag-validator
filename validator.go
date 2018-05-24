@@ -8,6 +8,7 @@ import (
 	"errors"
 )
 
+// AllTags can be used to validate all tags
 const AllTags = "*"
 
 var defaultRegexRules = map[string]*regexp.Regexp{
@@ -43,7 +44,7 @@ func (v *Validator) AddDefaultProcessors(tags ...string) {
 				match := rexpr.FindString(tag.value)
 
 				if len(match) > 0 {
-					errs = append(errs, errors.New(fmt.Sprintf(msg, match, tag.GetStructName(), tag.GetName(), tag.GetValue())))
+					errs = append(errs, fmt.Errorf(msg, match, tag.GetStructName(), tag.GetName(), tag.GetValue()))
 				}
 			}
 
@@ -54,7 +55,7 @@ func (v *Validator) AddDefaultProcessors(tags ...string) {
 			errs := []error{}
 
 			if len(tag.value) == 0 {
-				errs = append(errs, errors.New(fmt.Sprintf("Tag cannot be empty %v.%v", tag.GetStructName(), tag.GetName())))
+				errs = append(errs, fmt.Errorf("Tag cannot be empty %v.%v", tag.GetStructName(), tag.GetName()))
 			}
 
 			return errs
@@ -65,10 +66,10 @@ func (v *Validator) AddDefaultProcessors(tags ...string) {
 // checkForDuplicates validates duplicate tag values
 func checkForDuplicates(t *Tag, fieldsCache map[string]bool) []error {
 	errs := []error{}
-	cacheKey := strings.Join([]string{t.GetName(), t.GetName(), t.GetValue()}, ".")
+	cacheKey := strings.Join([]string{t.GetStructName(), t.GetName(), t.GetValue()}, ".")
 
 	if _, exist := fieldsCache[cacheKey]; exist {
-		errs = append(errs, errors.New(fmt.Sprintf("Duplicate tag value %v in %v.%v", t.GetValue(), t.GetStructName(), t.GetName())))
+		errs = append(errs, fmt.Errorf("Duplicate tag value %v in %v.%v", t.GetValue(), t.GetStructName(), t.GetName()))
 	}
 
 	fieldsCache[cacheKey] = true
@@ -104,13 +105,13 @@ func (v *Validator) Run(models ...string)  []error {
 
 	if len(v.processors) == 0 {
 		return []error{
-			errors.New( "There are no processors to run, consider adding the default ones."),
+			errors.New( "there are no processors to run, consider adding the default ones"),
 		}
 	}
 
 	tags := []string{}
 
-	for tag, _ := range v.processors {
+	for tag := range v.processors {
 		tags = append(tags, tag)
 	}
 
