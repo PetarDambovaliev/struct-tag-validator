@@ -127,7 +127,7 @@ func Test_testValidateCustomProcessor(t *testing.T) {
 	m.AddProcessor("db", func(tag *Tag) []error {
 		errs := []error{}
 
-		if len(tag.value) > 2 {
+		if len(tag.GetValue()) > 2 {
 			errs = append(errs, errors.New("Too long"))
 		}
 

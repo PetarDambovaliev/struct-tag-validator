@@ -41,7 +41,7 @@ func (v *Validator) AddDefaultProcessors(tags ...string) {
 			errs := []error{}
 
 			for msg, rexpr := range defaultRegexRules {
-				match := rexpr.FindString(tag.value)
+				match := rexpr.FindString(tag.GetValue())
 
 				if len(match) > 0 {
 					errs = append(errs, fmt.Errorf(msg, match, tag.GetStructName(), tag.GetName(), tag.GetValue()))
@@ -54,7 +54,7 @@ func (v *Validator) AddDefaultProcessors(tags ...string) {
 		v.processors[tagStr] = append(v.processors[tagStr], func(tag *Tag) []error {
 			errs := []error{}
 
-			if len(tag.value) == 0 {
+			if len(tag.GetValue()) == 0 {
 				errs = append(errs, fmt.Errorf("Tag cannot be empty %v.%v", tag.GetStructName(), tag.GetName()))
 			}
 
@@ -136,7 +136,7 @@ func (v *Validator) validate() []error {
 				errs = append(errs, checkForDuplicates(t, fieldsCache)...)
 			}
 
-			processors, exists := v.processors[t.name]
+			processors, exists := v.processors[t.GetName()]
 
 			if exists {
 				executableProcessors = append(processors)

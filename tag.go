@@ -14,24 +14,36 @@ import (
 
 // Tag represents a model struct tag.
 type Tag struct {
-	name       string
-	value      string
-	structName string
+	name       *string
+	value      *string
+	structName *string
 }
 
 // GetName returns the name of the tag.
 func (t *Tag) GetName() string {
-	return t.name
+	if t == nil || t.name == nil {
+		return ""
+	}
+
+	return *t.name
 }
 
 // GetValue returns the value of the tag.
 func (t *Tag) GetValue() string {
-	return t.value
+	if t == nil || t.value == nil {
+		return ""
+	}
+
+	return *t.value
 }
 
 // GetStructName returns the struct name the tag belongs to.
 func (t *Tag) GetStructName() string {
-	return t.structName
+	if t == nil || t.structName == nil {
+		return ""
+	}
+
+	return *t.structName
 }
 
 func getPackages(folder string, models ...string) map[string]*ast.Package {
@@ -117,7 +129,7 @@ Loop:
 				break Loop
 			}
 
-			tags[tag.structName] = append(tags[tag.structName], tag)
+			tags[tag.GetStructName()] = append(tags[tag.GetStructName()], tag)
 		}
 	}
 
@@ -160,14 +172,14 @@ func multiplex(cs ...<-chan *Tag) <-chan *Tag {
 func collecFields(file *ast.File, dbRegex *regexp.Regexp) <-chan *Tag {
 
 	tagChan := make(chan *Tag, 50)
-	var structName string
+	var structName *string
 
 	go func() {
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch x := node.(type) {
 			case *ast.TypeSpec:
 				//Get the struct name and end pos
-				structName = x.Name.Name
+				structName = &x.Name.Name
 			case *ast.StructType:
 				//Extract all db tags from the struct fields
 				for _, field := range x.Fields.List {
@@ -176,8 +188,8 @@ func collecFields(file *ast.File, dbRegex *regexp.Regexp) <-chan *Tag {
 						if len(matches) > 0 {
 							for _, matchTags := range matches {
 								tagChan <- &Tag{
-									matchTags[1],
-									matchTags[2],
+									&matchTags[1],
+									&matchTags[2],
 									structName,
 								}
 							}
